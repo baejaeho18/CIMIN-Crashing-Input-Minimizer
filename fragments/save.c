@@ -13,7 +13,6 @@ int main() {
     fp = fopen("output.bin", "wb");
     fwrite(res, sizeof(char), len, fp);
     fclose(fp);
-
     */
 
    return 0;

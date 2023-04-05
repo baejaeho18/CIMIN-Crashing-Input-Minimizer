@@ -3,17 +3,45 @@
 #include <stdlib.h>
 #include <sys/time.h>
 #include <unistd.h>
+#include <string.h>
+
+void
+read_file()
+{
+    FILE *fp;
+    int size;
+
+    fp = fopen("output.txt", "r");
+    
+    fscanf(fp, "%d", &size);
+    printf("%d\n", size); // prints out the size of the shortest crashing input found so far
+    
+    fclose(fp);
+    return;
+}
+
+void
+save_file() 
+{
+    FILE *fp;
+    char res[] = "result";
+    int size = strlen(res);
+
+    fp = fopen("output.txt", "w");
+    fprintf(fp, "%d\n%s", size, res);
+    
+    fclose(fp);
+    return;
+}
 
 void 
 handler_sigint(int sig) 
 {
     if (sig == SIGINT) { // ctrl + c pressed
-        int temp = 99;
-        printf("\n%d\n", temp); // prints out the size of the shortest crashing input found so far
-        // TODO : produces output file > 함수 만들어서 호출 ; size, result
+        read_file(); // prints the result found so far
+        save_file(); // produces output
         exit(0); // terminate the execution
     }
-
 }
 
 void 
@@ -23,13 +51,14 @@ handler_sigalrm(int sig)
     pid_t cur;
     cur = getpid();
     printf("Current process = %d\n", cur);
+    save_file();
     kill(cur, SIGTERM);
 }
 
 int 
 main() 
 {
-    // signal(SIGINT, handler_sigint);
+    signal(SIGINT, handler_sigint);
     
     signal(SIGALRM, handler_sigalrm);
 
