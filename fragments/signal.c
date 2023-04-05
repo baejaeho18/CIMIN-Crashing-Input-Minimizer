@@ -5,30 +5,29 @@
 #include <unistd.h>
 #include <string.h>
 
-void
+const char *
 read_file()
 {
     FILE *fp;
-    int size;
+    char *str;
 
     fp = fopen("output.txt", "r");
     
-    fscanf(fp, "%d", &size);
-    printf("%d\n", size); // prints out the size of the shortest crashing input found so far
+    fscanf(fp, "%s", str);
     
     fclose(fp);
-    return;
+
+    return str;
 }
 
 void
 save_file() 
 {
     FILE *fp;
-    char res[] = "result";
-    int size = strlen(res);
+    char res[] = "result to find hi";
 
     fp = fopen("output.txt", "w");
-    fprintf(fp, "%d\n%s", size, res);
+    fprintf(fp, "%s", res);
     
     fclose(fp);
     return;
@@ -38,7 +37,9 @@ void
 handler_sigint(int sig) 
 {
     if (sig == SIGINT) { // ctrl + c pressed
-        read_file(); // prints the result found so far
+        const char *str;
+        str = read_file();
+        printf("%lu\n", strlen(str)); // prints the result found so far
         save_file(); // produces output
         exit(0); // terminate the execution
     }
