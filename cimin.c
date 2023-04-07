@@ -130,6 +130,46 @@ main(int argc, char* argv[])
         return 1;
     }
 
+    // fork()
+    // parent-process
+    // reduce()
+    /*
+    while()
+    {
+        for()
+        {
+            tokenizing -ifelse
+            reduced_input <- head, tail
+            pipe-write(reduced_input)
+            alarm(3)
+            err_msg = read()
+            alarm(0)
+            if errmsg == errkeyword
+                return reduce
+            else
+                break
+        }
+        for()
+        {
+            token -> mid
+            pipe-writE(mid)
+            alarm(3)
+            err_msg = read()
+            alarm(0)
+            if errmsg == errkeyword
+                return reduce
+            else
+                break
+        }
+    }
+    return ___;
+    saveResut( reduced() )
+    //child
+    execl()
+    */
+
+
+
     if ((pid = fork()) < 0)
     {
         fprintf(stderr, "fork Failed");
