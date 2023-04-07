@@ -23,7 +23,7 @@ loadInput(char* filename)
     if (fp == NULL)
     {
         printf("Error opening file.\n");
-        return "";
+        return NULL;
     }
     // find the size of the file
     fseek(fp, 0, SEEK_END); // seek to the end of the file
@@ -34,7 +34,7 @@ loadInput(char* filename)
     if (buffer == NULL)
     {
         printf("Error allocating memory.\n");
-        return "";
+        return NULL;
     }
 
     fread(buffer, file_size, 1, fp);
@@ -45,7 +45,7 @@ loadInput(char* filename)
 }
 
 void
-saveReult(){
+saveResult(){
     printf("Reduced_input size : %d\n", latest_reduced_input_size);
 
     FILE *fp;
@@ -92,7 +92,7 @@ reduce(char* original_input)
     if (pipe(p2c) == -1 || pipe(c2p) == -1) 
     {
         fprintf(stderr, "Pipe Failed");
-        return 1;
+        return NULL;
     }
 
     while(input_size > 0)
@@ -131,7 +131,7 @@ reduce(char* original_input)
             if ((pid = fork()) < 0)
             {
                 fprintf(stderr, "fork Failed");
-                return 1;
+                return NULL;
             }
             else if (pid > 0) // Parent process
             {
@@ -180,7 +180,7 @@ reduce(char* original_input)
             if ((pid = fork()) < 0)
             {
                 fprintf(stderr, "fork Failed");
-                return 1;
+                return NULL;
             }
             else if (pid > 0) // Parent process
             {
@@ -211,7 +211,6 @@ reduce(char* original_input)
         input_size = input_size - 1;
     }
     free(reduced_input);
-    free(error_keyword);
     free(error_message);
 
     return original_input;
