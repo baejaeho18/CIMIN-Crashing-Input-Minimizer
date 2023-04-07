@@ -153,32 +153,7 @@ reduce(char* original_input)
             }
             else // Child process
             { 
-                // execl(target_program);
-                // get option
-
-                close(p2c[1]); // Close writing end of first pipe
-                dup2(c2p[1], 2);
-                printf("child: I'm child\n");
-        
-                // Read a string using first pipe
-                char reduced_input[100];
-                read(p2c[0], reduced_input, 100);
-                printf("child: %s\n", reduced_input);
-                
-                // sleep(3);
-
-                // if(strcmp(reduced_input, crashing_input) != 0)
-                fprintf(stderr, "child: std error\n");
-                
-                // Close both reading ends
-                close(p2c[0]);
-                close(c2p[0]);
-        
-                // Write concatenated string and close writing end
-                // write(c2p[1], error_message, strlen(error_message) + 1);
-                close(c2p[1]);
-        
-                exit(0);
+                execlp(target_p[0], target_p[0], target_p[1], target_p[2], target_p[3], target_p[4]);
             }
         }
         for(int i=0; i<=strlen(original_input)-input_size; i++)
@@ -230,32 +205,7 @@ reduce(char* original_input)
             }
             else // Child process
             { 
-                // execl(target_program);
-                // get option
-
-                close(p2c[1]); // Close writing end of first pipe
-                dup2(c2p[1], 2);
-                printf("child: I'm child\n");
-        
-                // Read a string using first pipe
-                char reduced_input[100];
-                read(p2c[0], reduced_input, 100);
-                printf("child: %s\n", reduced_input);
-                
-                // sleep(3);
-
-                // if(strcmp(reduced_input, crashing_input) != 0)
-                fprintf(stderr, "child: std error\n");
-                
-                // Close both reading ends
-                close(p2c[0]);
-                close(c2p[0]);
-        
-                // Write concatenated string and close writing end
-                // write(c2p[1], error_message, strlen(error_message) + 1);
-                close(c2p[1]);
-        
-                exit(0);
+                execlp(target_p[0], target_p[0], target_p[1], target_p[2], target_p[3], target_p[4]);
             }
 
             free(mid);
@@ -283,9 +233,9 @@ main(int argc, char* argv[])
     char input_path[30];
     char keyword[30];
     char output_path[30];
-
+    char* target_p[5];
     // get option i, m, o
-    while ( (op = getopt(argc, argv, "i:m:o:")) != -1 )
+    while ( (op = getopt(argc, argv, ":i:m:o:")) != -1 )
     {
         switch (op)
         {
@@ -298,18 +248,32 @@ main(int argc, char* argv[])
             case 'o':
                 memcpy(output_path, optarg, strlen(optarg));
                 break;
+            case ':':
+                printf("err : %c option requires string\n", optopt);
+                return 0;
             case '?':
-                if(optopt == 'i' || optopt == 'm' || optopt == 'o')
-                    printf("err : %c option requires string\n", optopt);
-                else
-                    printf("err : undetermined option\n");
-                break;
+                printf("err : %c is undetermined option\n", optopt);
+                return 0;
         }
     }
-    printf("%s\n", argv[argc-1]);
+    if(argc < 7)    // how to change?
+    {
+        printf("err : three parameters must be given with options\n");
+        return 0;
+    }
+    int cnt=0;
+    while(optind < argc)
+    {
+        target_p[cnt] = argv[optind++];
+    }
     printf("i : %s\n", input_path);
     printf("m : %s\n", keyword);
     printf("o : %s\n", output_path);
+    for(int i=0;i<5;i++){
+        if(target_p[i] != NULL)
+            printf("%s ", target_p[i]);
+    }
+    printf("\n");
 
     signal(SIGALRM, timeout);
     signal(SIGINT, keycontrol);
