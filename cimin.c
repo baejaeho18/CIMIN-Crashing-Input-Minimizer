@@ -17,9 +17,9 @@ loadInput(char* filename)
 {
     FILE *fp;
     char *buffer;
-    long file_size;
+    int file_size;
 
-    fp = fopen(filename, "rb"); // open the file in binary mode
+    fp = fopen(filename, "r"); // open the file in binary mode
     if (fp == NULL)
     {
         printf("Error opening file.\n");
@@ -28,9 +28,11 @@ loadInput(char* filename)
     // find the size of the file
     fseek(fp, 0, SEEK_END); // seek to the end of the file
     file_size = ftell(fp); // get the current file position (which is the size of the file)
-    rewind(fp);
+    printf("%d", file_size);
+    fseek(fp, 0, SEEK_SET);
     // allocate memory for the buffer to hold the file contents
     buffer = (char*) malloc(file_size + 1); // add space for null terminator
+    memset(buffer, 0, file_size+1);
     if (buffer == NULL)
     {
         printf("Error allocating memory.\n");
@@ -137,6 +139,7 @@ reduce(char* original_input)
             {
                 close(p2c[0]);
                 close(c2p[1]);
+                dup2(p2c[1], 0);
                 write(p2c[1], reduced_input, strlen(reduced_input) + 1);
                 alarm(3);
                 // Wait for child to send a string
@@ -156,7 +159,8 @@ reduce(char* original_input)
             }
             else 
             {   // Child process
-                execlp(target_p[0], target_p[0], target_p[1], target_p[2], target_p[3], target_p[4]);
+                dup2(c2p[1], 2);
+                execlp(target_p[0], target_p[0], target_p[1], target_p[2], target_p[3], target_p[4], NULL);
             }
         }
         for(int i=0; i<=strlen(original_input)-input_size; i++)
@@ -186,6 +190,7 @@ reduce(char* original_input)
             {
                 close(p2c[0]);
                 close(c2p[1]);
+                dup2(p2c[1], 0);
                 write(p2c[1], reduced_input, strlen(reduced_input) + 1);
                 alarm(3);
                 // Wait for child to send a string
@@ -205,7 +210,8 @@ reduce(char* original_input)
             }
             else // Child process
             { 
-                execlp(target_p[0], target_p[0], target_p[1], target_p[2], target_p[3], target_p[4]);
+                dup2(c2p[1], 2);
+                execlp(target_p[0], target_p[0], target_p[1], target_p[2], target_p[3], target_p[4], NULL);
             }
         }
         input_size = input_size - 1;
@@ -221,7 +227,7 @@ main(int argc, char* argv[])
 {
     // Used to get option(input, key error, ouput)
     int op; // option
-    char input_path[30];
+    char input_path[30] ="";
     // get option i, m, o
     while ( (op = getopt(argc, argv, ":i:m:o:")) != -1 )
     {
@@ -254,14 +260,14 @@ main(int argc, char* argv[])
     {
         target_p[cnt] = argv[optind++];
     }
-    // printf("i : %s\n", input_path);
-    // printf("m : %s\n", error_keyword);
-    // printf("o : %s\n", output_path);
-    // for(int i=0;i<5;i++){
-    //     if(target_p[i] != NULL)
-    //         printf("%s ", target_p[i]);
-    // }
-    // printf("\n");
+    printf("i : %s\n", input_path);
+    printf("m : %s\n", error_keyword);
+    printf("o : %s\n", output_path);
+    for(int i=0;i<5;i++){
+        if(target_p[i] != NULL)
+            printf("%s ", target_p[i]);
+    }
+    printf("\n");
 
     signal(SIGALRM, timeout);   // output_path
     signal(SIGINT, keycontrol); // output_path
