@@ -104,9 +104,14 @@ reduce(char* original_input)
         printf("%d\n", input_size);
         for(int i=0; i<=strlen(original_input) - input_size; i++)
         {
-            char* head;
-            char* tail;
-            reduced_input = (char*)malloc(sizeof(char) * (strlen(original_input)-input_size));
+            char* head = (char*)malloc(sizeof(char) * (i+1));
+            char* tail = (char*)malloc(sizeof(char) * (strlen(original_input)-i-input_size+1));
+            reduced_input = (char*)malloc(sizeof(char) * (strlen(original_input)-input_size+1));
+            if (reduced_input == NULL) {
+                // Handle malloc() failure
+                printf("Error: Failed to allocate memory for reduced_input\n");
+                exit(EXIT_FAILURE);
+            }
             // memset(reduced_input, 0, sizeof(char) * (strlen(original_input)-input_size));
             strcpy(reduced_input, "");
             //printf("rin:%s\n", reduced_input);
@@ -115,26 +120,40 @@ reduce(char* original_input)
                 strcpy(head, "");
                 //printf("head:%s,", head);
             }
-            else{
-                head = (char*)malloc(sizeof(char) * i);
-                strncpy(head, original_input, i);
-                printf("head:%s,", head);
-                // strcat(reduced_input, head);
-                sprintf(reduced_input, "%s", head);
-                printf("rinput:%s\n", reduced_input);
-                free(head);
+            else
+            {
+                // head = (char*)malloc(sizeof(char) * (i+1));
+                if (head == NULL) {
+                    // Handle malloc() failure
+                    printf("Error: Failed to allocate memory for reduced_input\n");
+                    exit(EXIT_FAILURE);
+                }
             }
+
+            strncpy(head, original_input, i);
+            printf("head:%s,", head);
+            // strcat(reduced_input, head);
+            // sprintf(reduced_input, "%s", head);
+            printf("rinput:%s\n", reduced_input);
+            free(head);
+            
             if(i+input_size > strlen(original_input)-1)
             {
                 strcpy(tail,"");
                 printf("tail:%s,", tail);
             }
-            else{    // i = 0
-                tail = (char*)malloc(sizeof(char) * (strlen(original_input)-i-input_size));
-                strncpy(tail, original_input+i+input_size, strlen(original_input)-i-input_size);
+            else
+            {    // i = 0
+                // tail = (char*)malloc(sizeof(char) * (strlen(original_input)-i-input_size+1));
+                if (tail == NULL) {
+                    // Handle malloc() failure
+                    printf("Error: Failed to allocate memory for reduced_input\n");
+                    exit(EXIT_FAILURE);
+                }
+                // strncpy(tail, original_input+i+input_size, strlen(original_input)-i-input_size+1);
                 printf("tail:%s,", tail);
-                sprintf(reduced_input, "%s", tail);
-                // strcat(reduced_input, tail);
+                // sprintf(reduced_input, "%s", tail);
+                strcat(reduced_input, tail);
                 printf("rinput:%s\n", reduced_input);
                 free(tail);
             }
@@ -195,7 +214,12 @@ reduce(char* original_input)
             }
             else
             {
-                reduced_input = (char*)malloc(sizeof(char) * input_size);
+                reduced_input = (char*)malloc(sizeof(char) * (input_size+1));
+                if (reduced_input == NULL) {
+                // Handle malloc() failure
+                    printf("Error: Failed to allocate memory for reduced_input\n");
+                    exit(EXIT_FAILURE);
+                }
                 strncpy(reduced_input, original_input+i, input_size);
             }
             printf("(%d) reduced_input:%s\n", i, reduced_input);
