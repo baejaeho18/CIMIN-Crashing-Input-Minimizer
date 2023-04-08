@@ -65,6 +65,7 @@ timeout(int sig)
         puts("Time out!");
 
     saveResult();
+    exit(0);
 }
 void
 keycontrol(int sig)
@@ -73,6 +74,7 @@ keycontrol(int sig)
         puts("CTRL+C pressed");
 
     saveResult();
+    exit(0);
 }
 
 char*
@@ -197,10 +199,9 @@ reduce(char* original_input)
                 close(c2p[0]);
                 close(p2c[1]);
                 dup2(c2p[1], 2);
-                dup2(0, p2c[0]);
+                dup2(p2c[0], 0);
                 read(p2c[0], reduced_input, strlen(reduced_input) + 1);
                 close(p2c[0]);
-                close(c2p[1]);
                 printf("(child) %s\n", reduced_input);
                 // execl(target_p[0], target_p[0], target_p[1], target_p[2], NULL);
                 execl(target_program, target_program, NULL);
@@ -257,10 +258,9 @@ reduce(char* original_input)
                 close(c2p[0]);
                 close(p2c[1]);
                 dup2(c2p[1], 2);
-                dup2(0, p2c[0]);
+                dup2(p2c[0], 0);
                 read(p2c[0], reduced_input, strlen(reduced_input) + 1);
                 close(p2c[0]);
-                close(c2p[1]);
                 printf("(child) %s\n", reduced_input);
                 // execl(target_p[0], target_p[0], target_p[1], target_p[2], NULL);
                 execl(target_program, target_program, NULL);
