@@ -65,6 +65,7 @@ timeout(int sig)
         puts("Time out!");
 
     saveResult();
+    exit(0);
 }
 void
 keycontrol(int sig)
@@ -73,6 +74,7 @@ keycontrol(int sig)
         puts("CTRL+C pressed");
 
     saveResult();
+    exit(0);
 }
 
 char*
@@ -131,16 +133,16 @@ reduce(char* original_input)
             }
 
             strncpy(head, original_input, i);
-            printf("head:%s,", head);
+            // printf("head:%s,", head);
             // strcat(reduced_input, head);
             // sprintf(reduced_input, "%s", head);
-            printf("rinput:%s\n", reduced_input);
+            // printf("rinput:%s\n", reduced_input);
             free(head);
             
             if(i+input_size > strlen(original_input)-1)
             {
                 strcpy(tail,"");
-                printf("tail:%s,", tail);
+                // printf("tail:%s,", tail);
             }
             else
             {    // i = 0
@@ -151,10 +153,10 @@ reduce(char* original_input)
                     exit(EXIT_FAILURE);
                 }
                 // strncpy(tail, original_input+i+input_size, strlen(original_input)-i-input_size+1);
-                printf("tail:%s,", tail);
+                // printf("tail:%s,", tail);
                 // sprintf(reduced_input, "%s", tail);
                 strcat(reduced_input, tail);
-                printf("rinput:%s\n", reduced_input);
+                // printf("rinput:%s\n", reduced_input);
                 free(tail);
             }
 
@@ -162,7 +164,7 @@ reduce(char* original_input)
             // printf("(%d) head: %s, tail: %s\n", i, head, tail);
 
             // for test
-            printf("(%d) reduced input:%s\n", i, reduced_input);
+            // printf("(%d) reduced input:%s\n", i, reduced_input);
 
             // fork - pipe - write(head+tail);
             if ((pid = fork()) < 0)
@@ -197,11 +199,11 @@ reduce(char* original_input)
                 close(c2p[0]);
                 close(p2c[1]);
                 dup2(c2p[1], 2);
-                dup2(0, p2c[0]);
+                dup2(p2c[0], 0);
                 read(p2c[0], reduced_input, strlen(reduced_input) + 1);
                 close(p2c[0]);
-                close(c2p[1]);
-                printf("(child) %s\n", reduced_input);
+                // close(c2p[1]);
+                // printf("(child) %s\n", reduced_input);
                 // execl(target_p[0], target_p[0], target_p[1], target_p[2], NULL);
                 execl(target_program, target_program, NULL);
             }
@@ -222,7 +224,7 @@ reduce(char* original_input)
                 }
                 strncpy(reduced_input, original_input+i, input_size);
             }
-            printf("(%d) reduced_input:%s\n", i, reduced_input);
+            // printf("(%d) reduced_input:%s\n", i, reduced_input);
 
             // fork - pipe - write(mid)
             if ((pid = fork()) < 0)
@@ -257,11 +259,11 @@ reduce(char* original_input)
                 close(c2p[0]);
                 close(p2c[1]);
                 dup2(c2p[1], 2);
-                dup2(0, p2c[0]);
+                dup2(p2c[0], 0);
                 read(p2c[0], reduced_input, strlen(reduced_input) + 1);
                 close(p2c[0]);
-                close(c2p[1]);
-                printf("(child) %s\n", reduced_input);
+                // close(c2p[1]);
+                // printf("(child) %s\n", reduced_input);
                 // execl(target_p[0], target_p[0], target_p[1], target_p[2], NULL);
                 execl(target_program, target_program, NULL);
             }
