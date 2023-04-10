@@ -61,7 +61,7 @@ saveResult(){
 void 
 timeout(int sig)
 {
-    if(sig==SIGALRM)
+    if(sig == SIGALRM)
         puts("Time out!");
 
     saveResult();
@@ -70,7 +70,7 @@ timeout(int sig)
 void
 keycontrol(int sig)
 {
-    if(sig==SIGINT)
+    if(sig == SIGINT)
         puts("CTRL+C pressed");
 
     saveResult();
@@ -178,7 +178,7 @@ reduce(char* original_input)
                 close(c2p[1]);
                 // dup2(p2c[1], 0);
                 write(p2c[1], reduced_input, strlen(reduced_input) + 1);
-                alarm(5);
+                alarm(3);
                 // Wait for child to send a string
                 close(p2c[1]);
                 wait(NULL);
@@ -238,7 +238,7 @@ reduce(char* original_input)
                 close(c2p[1]);
                 // dup2(p2c[1], 0);
                 write(p2c[1], reduced_input, strlen(reduced_input) + 1);
-                alarm(5);
+                alarm(3);
                 // Wait for child to send a string
                 close(p2c[1]);
                 wait(NULL);
