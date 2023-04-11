@@ -42,17 +42,6 @@ main()
     }
     fclose(fp) ;
 
-    // fork
-    pid_t child_pid ;
-    int exit_code ;
-    // pipe
-    int p2c[2];
-    int c2p[2];
-    if (pipe(p2c) == -1 || pipe(c2p) == -1) 
-    {
-        fprintf(stderr, "Pipe Failed");
-        exit(0);
-    }
     
     // delta debugging
     char tm[4096] ;
@@ -84,8 +73,19 @@ main()
             headtail_len = head_len + tail_len ;
 
             printf("%s\n", headtail);
-            printf("%d\n", headtail_len);
+            printf("%zd\n", headtail_len);
 
+            // fork
+            pid_t child_pid ;
+            int exit_code ;
+            // pipe
+            int p2c[2];
+            int c2p[2];
+            if (pipe(p2c) == -1 || pipe(c2p) == -1) 
+            {
+                fprintf(stderr, "Pipe Failed");
+                exit(0);
+            }
             // fork, exec, pipe
             if (child_pid = fork()) {
                 ssize_t s ;
@@ -117,7 +117,7 @@ main()
             // fclose(fw) ;
         }
         // mid
-        
+
         s-- ;
     }
     alarm(0) ;
