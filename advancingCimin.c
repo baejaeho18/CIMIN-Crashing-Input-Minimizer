@@ -8,12 +8,18 @@
 char t[4096] ;
 size_t t_len ;
 
+pid_t child_pid ;
+
+
 void
 timeout(int sig)
 {
     if(sig == SIGALRM)
+    {
         puts("Time out!");
-
+        kill(child_pid, SIGTERM);
+    }
+    
     exit(0);
 }
 
@@ -21,8 +27,10 @@ void
 keycontrol(int sig)
 {
     if(sig == SIGINT)
-        puts("CTRL+C pressed");
-
+    {
+        puts("Ctrl+c pressed!");
+        kill(child_pid, SIGTERM);
+    }
     exit(0);
 }
 
@@ -32,7 +40,6 @@ main()
     // signal
     signal(SIGALRM, timeout) ;   // output_path
     signal(SIGINT, keycontrol) ; // output_path
-    alarm(3) ;
 
     // load testcases
     FILE * fp = fopen("crash.json", "r") ;
@@ -42,7 +49,15 @@ main()
     }
     fclose(fp) ;
 
+    // fork
+    int exit_code ;
+    // pipe
+    int p2c[2];
+    int c2p[2];
     
+            
+
+    char err_msg[4096];
     // delta debugging
     char tm[4096] ;
     size_t tm_len ;
@@ -73,37 +88,52 @@ main()
             headtail_len = head_len + tail_len ;
 
             printf("%s\n", headtail);
-            printf("%zd\n", headtail_len);
-
-            // fork
-            pid_t child_pid ;
-            int exit_code ;
-            // pipe
-            int p2c[2];
-            int c2p[2];
+            printf("%d : %zd\n", input_count++, headtail_len);
+            
+            // 나중에 while 밖으로 빼야하는 부분
             if (pipe(p2c) == -1 || pipe(c2p) == -1) 
             {
                 fprintf(stderr, "Pipe Failed");
-                exit(0);
-            }
+                exit(1);
+            }  
+
             // fork, exec, pipe
             if (child_pid = fork()) {
-                ssize_t s ;
-                dup2(p2c[1], 0);
+            // parent
+                close(p2c[0]);
+                close(c2p[1]);
+//                dprintf(p2c[1], "%s", headtail) ;
                 write(p2c[1], headtail, headtail_len) ;
                 close(p2c[1]) ;
-
-                wait(&exit_code);
-
-                char err_msg[4096] = "kitty";
-                while ((s = read(p2c[0], err_msg, 4096)) > 0) {
+                alarm(3) ;
+                wait(&exit_code) ;
+                // exit_code가 signaled termination : exit(0);
+                alarm(0) ;
+                ssize_t s ;
+                while ((s = read(c2p[0], err_msg, 4096)) > 0) {
                     err_msg[s + 1] = 0x0 ;
                     printf(">%s\n", err_msg) ;
                 }
+                // check if error_message contains error_keyword
+                char err_keyword[20];
+                memcpy(err_keyword, "heap-buffer-overflow", 17);
+                printf("%s", err_msg);
+                printf("\n%s", err_keyword);
+                if(strstr(err_msg, err_keyword) == NULL)
+                    printf("no markup\n");
+                //    break;
+                else
+                    printf("good reduced\n");
+                //    return reduce(reduced_input);
             }
             else {
-                dup2(c2p[1], 2 /*standard error*/) ;
-	            execl("../IPCtutorial/hello", "../IPCtutorial/hello", (char *) 0x0) ;
+            // child
+                close(p2c[1]);
+                close(c2p[0]);
+                dup2(p2c[0], STDIN_FILENO /*read standard input*/) ;
+                dup2(c2p[1], 2 /*write standard error*/) ;
+                close(p2c[0]);
+                execl("./jsmn/jsondump", "./jsmn/jsondump", (char *) 0x0) ;
             }
             // output file save
             // char filename[16] ;
@@ -120,6 +150,5 @@ main()
 
         s-- ;
     }
-    alarm(0) ;
 
 }
