@@ -17,7 +17,7 @@ jsmn : clean cimin
 
 libxml2 : clean cimin
   cd libxml2 && ./build.sh
-  cd libxml2 && ../cimin -i testcases/crash.xml -m "SEGV" -o ../reduced xmlint    
+  cd libxml2 && ../cimin -i testcases/crash.xml -m "SEGV" -o ../reduced xmlint --recover --postvalid  
   
 balance : clean cimin
   cd balance && ./build.sh
