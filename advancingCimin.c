@@ -5,11 +5,27 @@
 #include <signal.h>
 #include <sys/wait.h>
 
-char t[4096] ;
-size_t t_len ;
-
 pid_t child_pid ;
+int input_count ;
+char **argu ;
+char output_path[30] ;
+char error_keyword[30] ;
+char target_program[30] ;
+char latest_reduced_input[4096] ;
+size_t latest_reduced_input_len ;
 
+void
+saveResult()
+{
+    FILE * fw = fopen(output_path, "w") ;
+    size_t written ;
+    written = 0 ;
+    while (written < latest_reduced_input_len) {
+        written += fwrite(latest_reduced_input + written, 1, latest_reduced_input_len - written, fw) ;
+    }
+    printf("reduced size: %zd\n", latest_reduced_input_len) ;
+    fclose(fw) ;
+}
 
 void
 timeout(int sig)
@@ -18,8 +34,8 @@ timeout(int sig)
     {
         puts("Time out!");
         kill(child_pid, SIGTERM);
+        saveResult();
     }
-    
     exit(0);
 }
 
@@ -30,46 +46,31 @@ keycontrol(int sig)
     {
         puts("Ctrl+c pressed!");
         kill(child_pid, SIGTERM);
+        saveResult();
     }
     exit(0);
 }
 
-int
-main()
+void
+reduce(char* t, size_t t_len)
 {
-    // signal
-    signal(SIGALRM, timeout) ;   // output_path
-    signal(SIGINT, keycontrol) ; // output_path
-
-    // load testcases
-    FILE * fp = fopen("crash.json", "r") ;
-    t_len = 0;
-    while (!feof(fp)) {
-        t_len = fread(t + t_len, 1, 4096, fp) ;
-    }
-    fclose(fp) ;
-
-    // fork
-    int exit_code ;
-    // pipe
-    int p2c[2];
-    int c2p[2];
-    
-            
-
-    char err_msg[4096];
-    // delta debugging
     char tm[4096] ;
     size_t tm_len ;
+    char err_msg[4096];
 
     memcpy(tm, t, t_len) ;
     tm_len = t_len ;
     size_t s = tm_len - 1 ;
 
-    int input_count ;
+    // fork
+    int exit_code ;
+    // pipe
+    int p2c[2] ;
+    int c2p[2] ;
 
     while (s > 0) {
-        for (int i = 0 ; i <= tm_len - s ; i++) {
+        for (int i = 0 ; i <= tm_len - s ; i++)
+        {
             char head[4096] ;
             char tail[4096] ;
             size_t head_len ;
@@ -87,68 +88,119 @@ main()
             memcpy(headtail + head_len, tail, tail_len) ;
             headtail_len = head_len + tail_len ;
 
-            printf("%s\n", headtail);
-            printf("%d : %zd\n", input_count++, headtail_len);
+            printf("%d:%zd ", input_count++, headtail_len) ;
             
             // 나중에 while 밖으로 빼야하는 부분
             if (pipe(p2c) == -1 || pipe(c2p) == -1) 
             {
-                fprintf(stderr, "Pipe Failed");
-                exit(1);
-            }  
-
+                fprintf(stderr, "Pipe Failed") ;
+                exit(1) ;
+            }
+        
             // fork, exec, pipe
-            if (child_pid = fork()) {
-            // parent
-                close(p2c[0]);
-                close(c2p[1]);
-//                dprintf(p2c[1], "%s", headtail) ;
+            if (child_pid = fork())
+            {    // parent
+                close(p2c[0]) ;
+                close(c2p[1]) ;
                 write(p2c[1], headtail, headtail_len) ;
                 close(p2c[1]) ;
                 alarm(3) ;
                 wait(&exit_code) ;
-                // exit_code가 signaled termination : exit(0);
                 alarm(0) ;
                 ssize_t s ;
                 while ((s = read(c2p[0], err_msg, 4096)) > 0) {
                     err_msg[s + 1] = 0x0 ;
-                    printf(">%s\n", err_msg) ;
                 }
                 // check if error_message contains error_keyword
-                char err_keyword[20];
-                memcpy(err_keyword, "heap-buffer-overflow", 17);
-                printf("%s", err_msg);
-                printf("\n%s", err_keyword);
-                if(strstr(err_msg, err_keyword) == NULL)
-                    printf("no markup\n");
-                //    break;
-                else
-                    printf("good reduced\n");
-                //    return reduce(reduced_input);
+                printf("%s\n", err_msg) ;
+                if(strstr(err_msg, error_keyword) != NULL) {
+                    printf("reduced: %s\n", headtail) ;
+                    if(headtail_len <= latest_reduced_input_len){
+                        memcpy(latest_reduced_input, headtail, headtail_len) ;
+                        latest_reduced_input_len = headtail_len ;
+                    }
+                    reduce(headtail, headtail_len) ;
+                }
             }
-            else {
-            // child
-                close(p2c[1]);
-                close(c2p[0]);
-                dup2(p2c[0], STDIN_FILENO /*read standard input*/) ;
-                dup2(c2p[1], 2 /*write standard error*/) ;
-                close(p2c[0]);
-                execl("./jsmn/jsondump", "./jsmn/jsondump", (char *) 0x0) ;
+            else
+            {   // child
+                close(p2c[1]) ;
+                close(c2p[0]) ;
+                dup2(p2c[0], 0) ;
+                dup2(c2p[1], 2) ;
+                close(p2c[0]) ;
+                execv(target_program, argu) ;
             }
-            // output file save
-            // char filename[16] ;
-            // sprintf(filename, "input%d", input_count++) ;
-            // FILE * fw = fopen(filename, "w") ;
-            // size_t written ;
-            // written = 0 ;
-            // while (written < headtail_len) {
-            //     written += fwrite(headtail + written, 1, headtail_len - written, fw) ;
-            // }
-            // fclose(fw) ;
         }
         // mid
 
         s-- ;
     }
+}
 
+int
+main(int argc, char* argv[])
+{
+    // signal
+    signal(SIGALRM, timeout) ;   // output_path
+    signal(SIGINT, keycontrol) ; // output_path
+
+    // Used to get option(input, key error, ouput)
+    int op ; // option
+    char input_path[30] ;
+    argu = (char **)malloc(sizeof(char *) * (argc - 5)) ;
+    int argu_idx = 0 ;
+    // get option i, m, o
+    while ( (op = getopt(argc, argv, ":i:m:o:")) != -1 )
+    {
+        switch (op)
+        {
+            case 'i' :
+                memcpy(input_path, optarg, strlen(optarg)) ;
+                break;
+            case 'm' :
+                memcpy(error_keyword, optarg, strlen(optarg)) ;
+                break;
+            case 'o' :
+                memcpy(output_path, optarg, strlen(optarg)) ;
+                break;
+            case ':' :
+                printf("err : %c option requires string\n", optopt) ;
+                return 0 ;
+            case '?' :
+                printf("err : %c is undetermined option\n", optopt) ;
+                return 0 ;
+        }
+    }
+    strcpy(target_program, argv[optind]) ;
+    for (int i = optind; i < argc; i++) {
+        argu[argu_idx++] = argv[i] ;
+    }
+    argu[argc] = NULL;
+    // printf("i : %s\n", input_path) ;
+    // printf("m : %s\n", error_keyword) ;
+    // printf("o : %s\n", output_path) ;
+    // printf("p : %s\n", target_program) ;
+    // printf("argu: ") ;
+    // for (int i = 0; i < argu_idx; i++) {
+    //     printf("%s ", argu[i]) ;
+    // }
+
+    
+    // load testcases
+    FILE * fp = fopen(input_path, "r") ;
+    char t[4096] ;
+    size_t t_len = 0;
+    while (!feof(fp)) {
+        t_len = fread(t + t_len, 1, 4096, fp) ;
+    }
+    fclose(fp) ;
+
+    // delta debuggin
+    memcpy(latest_reduced_input, t, t_len) ;
+    latest_reduced_input_len = t_len ;
+    reduce(t, t_len) ;
+
+    saveResult();
+    return 0 ;
 }
